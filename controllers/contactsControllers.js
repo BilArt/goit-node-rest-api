@@ -3,7 +3,7 @@ import {
     getContactById,
     removeContact,
     addContact,
-    updateContact,
+    updateContact as updateContactService,
   } from '../services/contactsServices.js';
   
   import HttpError from '../helpers/HttpError.js';
@@ -51,7 +51,7 @@ import {
   export const updateContact = async (req, res, next) => {
     try {
       const { id } = req.params;
-      const updated = await updateContact(id, req.body);
+      const updated = await updateContactService(id, req.body);
       if (!updated) throw HttpError(404, 'Contact not found');
       res.json(updated);
     } catch (error) {
