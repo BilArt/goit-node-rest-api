@@ -37,3 +37,19 @@ export const updateContact = async (id, data) => {
 
   return updatedContact;
 };
+
+export const updateStatusContact = async (id, favorite) => {
+  const [updatedCount, [updatedContact]] = await Contact.update(
+    { favorite },
+    {
+      where: { id },
+      returning: true,
+    }
+  );
+
+  if (!updatedCount) {
+    return null;
+  }
+
+  return updatedContact;
+};
