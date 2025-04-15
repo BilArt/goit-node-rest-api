@@ -1,6 +1,10 @@
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+
 import { User } from "../models/User.js";
 import HttpError from "../helpers/HttpError.js";
+
+const JWT_SECRET = "your_jwt_secret";
 
 export const register = async (req, res, next) => {
   try {
@@ -26,6 +30,41 @@ export const register = async (req, res, next) => {
       user: {
         email: newUser.email,
         subscription: newUser.subscription,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const login = async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      throw HttpError(400, "Missing required fields");
+    }
+
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      throw HttpError(401, "Email or password is wrong");
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      throw HttpError(401, "Email or password is wrong");
+    }
+
+    const token = jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: "24h" });
+
+    user.token = token;
+    await user.save();
+
+    res.json({
+      token,
+      user: {
+        email: user.email,
+        subscription: user.subscription,
       },
     });
   } catch (error) {
