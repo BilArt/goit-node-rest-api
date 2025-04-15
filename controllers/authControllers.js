@@ -71,3 +71,21 @@ export const login = async (req, res, next) => {
     next(error);
   }
 };
+
+export const logout = async (req, res, next) => {
+    try {
+      const user = req.user;
+  
+      if (!user) {
+        throw HttpError(401, "Not authorized");
+      }
+  
+      user.token = null;
+      await user.save();
+  
+      res.status(204).send();
+    } catch (error) {
+      next(error);
+    }
+  };
+  
