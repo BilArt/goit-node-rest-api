@@ -89,3 +89,16 @@ export const logout = async (req, res, next) => {
     }
   };
   
+  export const getCurrent = async (req, res, next) => {
+    try {
+      const user = req.user;
+  
+      res.json({
+        email: user.email,
+        subscription: user.subscription,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+  
