@@ -1,7 +1,9 @@
 import { Contact } from '../models/Contact.js';
 
-export const listContacts = async () => {
-  const contacts = await Contact.findAll();
+export const listContacts = async (ownerId) => {
+  const contacts = await Contact.findAll({
+    where: { owner: ownerId },
+  });
   return contacts;
 };
 
@@ -10,8 +12,8 @@ export const getContactById = async (id) => {
   return contact;
 };
 
-export const addContact = async ({ name, email, phone, favorite = false }) => {
-  const newContact = await Contact.create({ name, email, phone, favorite });
+export const addContact = async ({ name, email, phone, favorite = false, owner }) => {
+  const newContact = await Contact.create({ name, email, phone, favorite, owner });
   return newContact;
 };
 
