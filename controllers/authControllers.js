@@ -1,10 +1,18 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import gravatar from "gravatar";
+import fs from "fs/promises";
+import path from "path";
+import { fileURLToPath } from "url";
 
 import { User } from "../models/User.js";
 import HttpError from "../helpers/HttpError.js";
 
 const JWT_SECRET = "your_jwt_secret";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const avatarsDir = path.join(__dirname, "../public/avatars");
 
 export const register = async (req, res, next) => {
   try {
@@ -20,16 +28,19 @@ export const register = async (req, res, next) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    const avatarURL = gravatar.url(email, { s: "250", d: "retro" }, true);
 
     const newUser = await User.create({
       email,
       password: hashedPassword,
+      avatarURL,
     });
 
     res.status(201).json({
       user: {
         email: newUser.email,
         subscription: newUser.subscription,
+        avatarURL: newUser.avatarURL,
       },
     });
   } catch (error) {
@@ -73,32 +84,49 @@ export const login = async (req, res, next) => {
 };
 
 export const logout = async (req, res, next) => {
-    try {
-      const user = req.user;
-  
-      if (!user) {
-        throw HttpError(401, "Not authorized");
-      }
-  
-      user.token = null;
-      await user.save();
-  
-      res.status(204).send();
-    } catch (error) {
-      next(error);
+  try {
+    const user = req.user;
+
+    if (!user) {
+      throw HttpError(401, "Not authorized");
     }
-  };
-  
-  export const getCurrent = async (req, res, next) => {
-    try {
-      const user = req.user;
-  
-      res.json({
-        email: user.email,
-        subscription: user.subscription,
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-  
+
+    user.token = null;
+    await user.save();
+
+    res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getCurrent = async (req, res, next) => {
+  try {
+    const user = req.user;
+
+    res.json({
+      email: user.email,
+      subscription: user.subscription,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateAvatar = async (req, res, next) => {
+  try {
+    const { path: tempPath, originalname } = req.file;
+    const filename = `${req.user.id}_${originalname}`;
+    const finalPath = path.join(avatarsDir, filename);
+
+    await fs.rename(tempPath, finalPath);
+
+    const avatarURL = `/avatars/${filename}`;
+    req.user.avatarURL = avatarURL;
+    await req.user.save();
+
+    res.json({ avatarURL });
+  } catch (error) {
+    next(error);
+  }
+};
