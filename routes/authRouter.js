@@ -6,7 +6,6 @@ import {
   getCurrent,
   updateAvatar,
 } from "../controllers/authControllers.js";
-
 import auth from "../middlewares/auth.js";
 import { upload } from "../middlewares/upload.js";
 

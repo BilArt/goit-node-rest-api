@@ -115,6 +115,10 @@ export const getCurrent = async (req, res, next) => {
 
 export const updateAvatar = async (req, res, next) => {
   try {
+    if (!req.file) {
+      throw HttpError(400, "Avatar file is required");
+    }
+
     const { path: tempPath, originalname } = req.file;
     const filename = `${req.user.id}_${originalname}`;
     const finalPath = path.join(avatarsDir, filename);
