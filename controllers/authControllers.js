@@ -8,6 +8,7 @@ import { v4 as uuidv4 } from "uuid";
 
 import { User } from "../models/User.js";
 import HttpError from "../helpers/HttpError.js";
+import { sendEmail } from "../helpers/sendEmail.js";
 
 const JWT_SECRET = "your_jwt_secret";
 
@@ -39,11 +40,14 @@ export const register = async (req, res, next) => {
       verificationToken,
     });
 
+    await sendEmail(email, verificationToken);
+
     res.status(201).json({
       user: {
         email: newUser.email,
         subscription: newUser.subscription,
         avatarURL: newUser.avatarURL,
+        verify: newUser.verify,
       },
     });
   } catch (error) {
@@ -137,6 +141,26 @@ export const updateAvatar = async (req, res, next) => {
     await req.user.save();
 
     res.json({ avatarURL });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const verifyEmail = async (req, res, next) => {
+  try {
+    const { verificationToken } = req.params;
+
+    const user = await User.findOne({ where: { verificationToken } });
+
+    if (!user) {
+      throw HttpError(404, "User not found");
+    }
+
+    user.verify = true;
+    user.verificationToken = null;
+    await user.save();
+
+    res.json({ message: "Verification successful" });
   } catch (error) {
     next(error);
   }
