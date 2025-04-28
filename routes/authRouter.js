@@ -6,13 +6,16 @@ import {
   getCurrent,
   updateAvatar,
 } from "../controllers/authControllers.js";
+
 import auth from "../middlewares/auth.js";
 import { upload } from "../middlewares/upload.js";
+import validateBody from "../helpers/validateBody.js";
+import { registerSchema, loginSchema } from "../schemas/authSchemas.js";
 
 const authRouter = express.Router();
 
-authRouter.post("/register", register);
-authRouter.post("/login", login);
+authRouter.post("/register", validateBody(registerSchema), register);
+authRouter.post("/login", validateBody(loginSchema), login);
 authRouter.post("/logout", auth, logout);
 authRouter.get("/current", auth, getCurrent);
 authRouter.patch("/avatars", auth, upload.single("avatar"), updateAvatar);
