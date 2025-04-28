@@ -4,6 +4,7 @@ import gravatar from "gravatar";
 import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
+import { v4 as uuidv4 } from "uuid";
 
 import { User } from "../models/User.js";
 import HttpError from "../helpers/HttpError.js";
@@ -29,11 +30,13 @@ export const register = async (req, res, next) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const avatarURL = gravatar.url(email, { s: "250", d: "retro" }, true);
+    const verificationToken = uuidv4();
 
     const newUser = await User.create({
       email,
       password: hashedPassword,
       avatarURL,
+      verificationToken,
     });
 
     res.status(201).json({
@@ -59,6 +62,10 @@ export const login = async (req, res, next) => {
     const user = await User.findOne({ where: { email } });
     if (!user) {
       throw HttpError(401, "Email or password is wrong");
+    }
+
+    if (!user.verify) {
+      throw HttpError(401, "Email not verified");
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
