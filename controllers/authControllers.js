@@ -9,6 +9,7 @@ import { v4 as uuidv4 } from "uuid";
 import { User } from "../models/User.js";
 import HttpError from "../helpers/HttpError.js";
 import { sendEmail } from "../helpers/sendEmail.js";
+import { emailSchema } from "../schemas/userSchemas.js";
 
 const JWT_SECRET = "your_jwt_secret";
 
@@ -36,8 +37,10 @@ export const register = async (req, res, next) => {
     const newUser = await User.create({
       email,
       password: hashedPassword,
+      subscription: "starter",
       avatarURL,
       verificationToken,
+      verify: false,
     });
 
     await sendEmail(email, verificationToken);
@@ -47,7 +50,6 @@ export const register = async (req, res, next) => {
         email: newUser.email,
         subscription: newUser.subscription,
         avatarURL: newUser.avatarURL,
-        verify: newUser.verify,
       },
     });
   } catch (error) {
@@ -161,6 +163,34 @@ export const verifyEmail = async (req, res, next) => {
     await user.save();
 
     res.json({ message: "Verification successful" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const resendVerifyEmail = async (req, res, next) => {
+  try {
+    const { error } = emailSchema.validate(req.body);
+
+    if (error) {
+      throw HttpError(400, error.message);
+    }
+
+    const { email } = req.body;
+
+    const user = await User.findOne({ where: { email } });
+
+    if (!user) {
+      throw HttpError(404, "User not found");
+    }
+
+    if (user.verify) {
+      throw HttpError(400, "Verification has already been passed");
+    }
+
+    await sendEmail(email, user.verificationToken);
+
+    res.json({ message: "Verification email sent" });
   } catch (error) {
     next(error);
   }
